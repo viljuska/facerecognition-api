@@ -1,0 +1,28 @@
+{
+  "users": [
+	{
+	  "id": 1,
+	  "name": "John",
+	  "email": "john@gmail.com",
+	  "pass": "cookies",
+	  "entries": 3,
+	  "joined": "2017-12-12"
+	},
+	{
+	  "id": 2,
+	  "name": "Sally",
+	  "email": "sally@gmail.com",
+	  "pass": "bananas",
+	  "entries": 6,
+	  "joined": "2017-12-11"
+	},
+	{
+	  "id": 3,
+	  "name": "Stefan Jocić",
+	  "email": "stefan@gmail.com",
+	  "pass": "$2b$10$/c.zaQfeZ3W72hG3Bs.L.uPyAeEWAguMmL0WLaX1Ta.poVPXtXL1O",
+	  "entries": 0,
+	  "joined": "2023-11-25T21:13:40.048Z"
+	}
+  ]
+}
