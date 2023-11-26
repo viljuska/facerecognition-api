@@ -109,13 +109,14 @@ app.put( '/image', async ( req, res ) => {
 	const { id } = req.body;
 
 	try {
-		const user = await db( 'users' )
+		// Destructure object inside array
+		const [ { entries } ] = await db( 'users' )
 			.where( { id } )
 			.increment( 'entries', 1 )
 			.returning( 'entries' );
 
-		if ( user.length ) {
-			return res.json( user[ 0 ] );
+		if ( entries ) {
+			return res.json( entries );
 		}
 	} catch ( e ) {
 		console.log( e );
