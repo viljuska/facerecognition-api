@@ -28,7 +28,7 @@ const connectionString = {
 	      'client'    : 'pg',
 	      'connection': {
 		      'connectionString': connectionString[ environment ],
-		      'ssl'             : true,
+		      'ssl'             : false, // Just for development
 	      },
       } );
 
