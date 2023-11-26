@@ -1,12 +1,12 @@
-const express      = require( 'express' ),
-      app          = express(),
-      bcrypt       = require( 'bcrypt' ),
-      cors         = require( 'cors' ),
-      knex         = require( 'knex' ),
-      { register } = require( './controllers/register' ),
-      { signin }   = require( './controllers/signin' ),
-      { profile }  = require( './controllers/profile' ),
-      { image }    = require( './controllers/image' );
+const express                  = require( 'express' ),
+      app                      = express(),
+      bcrypt                   = require( 'bcrypt' ),
+      cors                     = require( 'cors' ),
+      knex                     = require( 'knex' ),
+      { register }             = require( './controllers/register' ),
+      { signin }               = require( './controllers/signin' ),
+      { profile }              = require( './controllers/profile' ),
+      { image, handleApiCall } = require( './controllers/image' );
 
 const db = knex( {
 	'client'    : 'pg',
@@ -40,6 +40,11 @@ app.post(
 app.get(
 	'/profile/:id',
 	( req, res ) => profile( req, res, db ),
+);
+
+app.post(
+	'/imageurl',
+	( req, res ) => handleApiCall( req, res ),
 );
 
 app.put(

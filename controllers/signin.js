@@ -1,12 +1,12 @@
 const signin = async ( req, res, db, bcrypt ) => {
-	const { email: req_email = '', pass: req_pass = '' } = req.body;
+	const { email = '', pass = '' } = req.body;
 
-	if ( !req_email || !req_pass ) {
+	if ( !email || !pass ) {
 		return res.status( 400 ).json( 'incorrect form submission' );
 	}
 
 	try {
-		const [ user_login ] = await db.select( '*' ).from( 'login' ).where( { email: req_email } );
+		const [ user_login ] = await db.select( '*' ).from( 'login' ).where( { email } );
 
 		// Check if user exists
 		if ( !user_login ) {
@@ -14,11 +14,11 @@ const signin = async ( req, res, db, bcrypt ) => {
 		}
 
 		// Check if password is correct
-		if ( !bcrypt.compareSync( req_pass, user_login.hash ) ) {
+		if ( !bcrypt.compareSync( pass, user_login.hash ) ) {
 			return res.status( 400 ).json( 'wrong credentials' );
 		}
 
-		const [ user ] = await db.select( '*' ).from( 'users' ).where( { email: req_email } );
+		const [ user ] = await db.select( '*' ).from( 'users' ).where( { email } );
 
 		return res.json( user );
 	} catch ( e ) {

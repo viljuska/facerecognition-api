@@ -1,6 +1,10 @@
 const saltRounds = 10,
       register   = async ( req, res, db, bcrypt ) => {
-	      let { email, name, pass } = req.body;
+	      const { email, name, pass } = req.body;
+
+	      if ( !email || !name || !pass ) {
+		      return res.status( 400 ).json( 'incorrect form submission' );
+	      }
 
 	      // There are sync and async versions of bcrypt
 	      const salt = bcrypt.genSaltSync( saltRounds );
