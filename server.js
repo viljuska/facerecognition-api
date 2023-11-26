@@ -4,7 +4,18 @@ const express    = require( 'express' ),
       fs         = require( 'fs' ),
       bcrypt     = require( 'bcrypt' ),
       saltRounds = 10,
-      cors       = require( 'cors' );
+      cors       = require( 'cors' ),
+      knex       = require( 'knex' );
+
+const db = knex( {
+	'client'    : 'pg',
+	'connection': {
+		'host'    : '127.0.0.1',
+		'user'    : 'postgres',
+		'password': '2657',
+		'database': 'facerecognitionbrain',
+	},
+} );
 
 /**
  * Get user by id
@@ -22,95 +33,118 @@ app.use( express.json() );
 app.use( cors() );
 
 app.get( '/', ( req, res ) => {
-	res.json( database.users );
+	return res.json( database.users );
 } );
 
-app.post( '/signin', ( req, res ) => {
+app.post( '/signin', async ( req, res ) => {
 	const { email: req_email = '', pass: req_pass = '' } = req.body;
 
 	if ( !req_email || !req_pass ) {
 		return res.status( 400 ).json( 'incorrect form submission' );
 	}
 
-	// Loop through the users in the database and check if the user exists and the password is correct using bcrypt
-	for ( const user of database.users ) {
-		const { email, pass } = user;
+	try {
+		const [ user_login ] = await db.select( '*' ).from( 'login' ).where( { email: req_email } );
 
-		if ( req_email === email ) {
-			if ( !bcrypt.compareSync( req_pass, pass ) ) {
-				return res.status( 400 ).json( 'wrong credentials' );
-			}
-
-			const return_user = user;
-			delete return_user.pass;
-
-			return res.json( return_user );
+		// Check if user exists
+		if ( !user_login ) {
+			return res.status( 404 ).json( 'User does not exist' );
 		}
-	}
 
-	res.status( 400 ).json( 'error logging in' );
+		// Check if password is correct
+		if ( !bcrypt.compareSync( req_pass, user_login.hash ) ) {
+			return res.status( 400 ).json( 'wrong credentials' );
+		}
+
+		const [ user ] = await db.select( '*' ).from( 'users' ).where( { email: req_email } );
+
+		return res.json( user );
+	} catch ( e ) {
+		console.log( e );
+
+		return res.status( 500 ).json( 'Server error' );
+	}
 } );
 
-app.post( '/register', ( req, res ) => {
+app.post( '/register', async ( req, res ) => {
 	let { email, name, pass } = req.body;
 
 	// There are sync and async versions of bcrypt
 	const salt = bcrypt.genSaltSync( saltRounds );
 	const hash = bcrypt.hashSync( pass, salt );
 
-	database.users.push( {
-		id     : database.users.length + 1,
-		name   : name,
-		email  : email,
-		pass   : hash,
-		entries: 0,
-		joined : new Date(),
-	} );
+	try {
+		// One way to do it
+		const user_inserted = await db( 'users' )
+			.insert( {
+				email,
+				name,
+				joined: new Date(),
+			} )
+			.returning( '*' );
 
-	fs.writeFile( 'db.json', JSON.stringify( database ), ( err ) => {
-		if ( err ) {
-			console.log( err );
+		const login_inserted = await db( 'login' )
+			.insert( {
+				email,
+				hash,
+			} )
+			.returning( '*' );
+
+		if ( user_inserted.length && login_inserted.length ) {
+			const return_user = {
+				name : user_inserted[ 0 ].name,
+				email: user_inserted[ 0 ].email,
+				pass,
+			};
+
+			return res.json( return_user );
 		}
-	} );
+	} catch ( e ) {
+		console.log( e );
+	}
 
-	const new_user = database.users[ database.users.length - 1 ];
-	delete new_user.pass;
-
-	res.json( new_user );
+	return res.status( 400 ).json( 'unable to register' );
 } );
 
-app.get( '/profile/:id', ( req, res ) => {
+app.get( '/profile/:id', async ( req, res ) => {
 	const { id } = req.params;
-	const user   = getUser( id );
 
-	if ( user.length ) {
-		return res.json( user[ 0 ] );
+	try {
+		const user = await db.select( '*' ).from( 'users' ).where( { id } );
+
+		if ( user.length ) {
+			return res.json( user[ 0 ] );
+		}
+	} catch ( e ) {
+		console.log( e );
+		return res.status( 500 ).json( 'server error' );
 	}
 
-	res.status( 404 ).json( 'no such user' );
+	return res.status( 404 ).json( 'no such user' );
 } );
 
-app.put( '/image', ( req, res ) => {
+app.put( '/image', async ( req, res ) => {
 	const { id } = req.body;
-	const user   = getUser( id );
 
-	if ( user.id ) {
-		database.users[ +id - 1 ].entries++;
+	try {
+		const user = await db( 'users' )
+			.where( { id } )
+			.increment( 'entries', 1 )
+			.returning( 'entries' );
 
-		fs.writeFile( 'db.json', JSON.stringify( database ), ( err ) => {
-			if ( err ) {
-				console.log( err );
-			}
-		} );
-
-		return res.json( database.users[ +id - 1 ].entries );
+		if ( user.length ) {
+			return res.json( user[ 0 ] );
+		}
+	} catch ( e ) {
+		console.log( e );
+		return res.status( 500 ).json( 'server error' );
 	}
 
-	res.status( 404 ).json( 'not found' );
+	return res.status( 404 ).json( 'not found' );
 } );
 
 app.get( '/signout', ( req, res ) => {
-	res.json( 'signout' );
+	return res.json( 'signout' );
 } );
 
 app.listen( 3000, () => {
