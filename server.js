@@ -1,7 +1,5 @@
 const express    = require( 'express' ),
       app        = express(),
-      database   = require( './db.json' ),
-      fs         = require( 'fs' ),
       bcrypt     = require( 'bcrypt' ),
       saltRounds = 10,
       cors       = require( 'cors' ),
@@ -17,23 +15,13 @@ const db = knex( {
 	},
 } );
 
-/**
- * Get user by id
- *
- * @param id
- * @returns {*}
- */
-function getUser( id ) {
-	return database.users.find( user => user.id === Number( id ) );
-}
-
 // Setup middleware to parse the body of the request
 app.use( express.urlencoded( { extended: false } ) );
 app.use( express.json() );
 app.use( cors() );
 
 app.get( '/', ( req, res ) => {
-	return res.json( database.users );
+	return res.json( 'success' );
 } );
 
 app.post( '/signin', async ( req, res ) => {
@@ -91,13 +79,7 @@ app.post( '/register', async ( req, res ) => {
 			.returning( '*' );
 
 		if ( user_inserted.length && login_inserted.length ) {
-			const return_user = {
-				name : user_inserted[ 0 ].name,
-				email: user_inserted[ 0 ].email,
-				pass,
-			};
-
-			return res.json( return_user );
+			return res.json( user_inserted[ 0 ] );
 		}
 	} catch ( e ) {
 		console.log( e );
