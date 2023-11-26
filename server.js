@@ -6,17 +6,27 @@ const express                  = require( 'express' ),
       { register }             = require( './controllers/register' ),
       { signin }               = require( './controllers/signin' ),
       { profile }              = require( './controllers/profile' ),
-      { image, handleApiCall } = require( './controllers/image' );
+      { image, handleApiCall } = require( './controllers/image' ),
+      PORT                     = process.env.PORT || 3000;
+
+// const db = knex( {
+// 	'client'    : 'pg',
+// 	'connection': {
+// 		'host'    : '127.0.0.1',
+// 		'user'    : 'postgres',
+// 		'password': '2657',
+// 		'database': 'facerecognitionbrain',
+// 	},
+// } );
 
 const db = knex( {
 	'client'    : 'pg',
 	'connection': {
-		'host'    : '127.0.0.1',
-		'user'    : 'postgres',
-		'password': '2657',
-		'database': 'facerecognitionbrain',
+		'connectionString': 'postgres://facerecognition_user:akElhzA4fk0qkNlV1dCkPpyTboURhEDb@dpg-clhrikt8td7s73bqruhg-a.frankfurt-postgres.render.com/facerecognition_caet', // External url
+		'ssl'             : true,
 	},
 } );
+
 
 // Setup middleware to parse the body of the request
 app.use( express.urlencoded( { extended: false } ) );
@@ -52,6 +62,8 @@ app.put(
 	( req, res ) => image( req, res, db ),
 );
 
-app.listen( 3000, () => {
-	console.log( 'Server running on port 3000' );
+console.log( process.env );
+
+app.listen( PORT, () => {
+	console.log( `Server running on port ${ PORT }` );
 } );
