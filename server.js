@@ -1,9 +1,12 @@
-const express    = require( 'express' ),
-      app        = express(),
-      bcrypt     = require( 'bcrypt' ),
-      saltRounds = 10,
-      cors       = require( 'cors' ),
-      knex       = require( 'knex' );
+const express      = require( 'express' ),
+      app          = express(),
+      bcrypt       = require( 'bcrypt' ),
+      cors         = require( 'cors' ),
+      knex         = require( 'knex' ),
+      { register } = require( './controllers/register' ),
+      { signin }   = require( './controllers/signin' ),
+      { profile }  = require( './controllers/profile' ),
+      { image }    = require( './controllers/image' );
 
 const db = knex( {
 	'client'    : 'pg',
@@ -24,126 +27,26 @@ app.get( '/', ( req, res ) => {
 	return res.json( 'success' );
 } );
 
-app.post( '/signin', async ( req, res ) => {
-	const { email: req_email = '', pass: req_pass = '' } = req.body;
+app.post(
+	'/signin',
+	( req, res ) => signin( req, res, db, bcrypt ),
+);
 
-	if ( !req_email || !req_pass ) {
-		return res.status( 400 ).json( 'incorrect form submission' );
-	}
+app.post(
+	'/register',
+	( req, res ) => register( req, res, db, bcrypt ),
+);
 
-	try {
-		const [ user_login ] = await db.select( '*' ).from( 'login' ).where( { email: req_email } );
+app.get(
+	'/profile/:id',
+	( req, res ) => profile( req, res, db ),
+);
 
-		// Check if user exists
-		if ( !user_login ) {
-			return res.status( 404 ).json( 'User does not exist' );
-		}
-
-		// Check if password is correct
-		if ( !bcrypt.compareSync( req_pass, user_login.hash ) ) {
-			return res.status( 400 ).json( 'wrong credentials' );
-		}
-
-		const [ user ] = await db.select( '*' ).from( 'users' ).where( { email: req_email } );
-
-		return res.json( user );
-	} catch ( e ) {
-		console.log( e );
-
-		return res.status( 500 ).json( 'Server error' );
-	}
-} );
-
-app.post( '/register', async ( req, res ) => {
-	let { email, name, pass } = req.body;
-
-	// There are sync and async versions of bcrypt
-	const salt = bcrypt.genSaltSync( saltRounds );
-	const hash = bcrypt.hashSync( pass, salt );
-
-	try {
-		// One way to do it
-		const user_inserted = await db( 'users' )
-			.insert( {
-				email,
-				name,
-				joined: new Date(),
-			} )
-			.returning( '*' );
-
-		const login_inserted = await db( 'login' )
-			.insert( {
-				email,
-				hash,
-			} )
-			.returning( '*' );
-
-		if ( user_inserted.length && login_inserted.length ) {
-			return res.json( user_inserted[ 0 ] );
-		}
-	} catch ( e ) {
-		console.log( e );
-	}
-
-	return res.status( 400 ).json( 'unable to register' );
-} );
-
-app.get( '/profile/:id', async ( req, res ) => {
-	const { id } = req.params;
-
-	try {
-		const user = await db.select( '*' ).from( 'users' ).where( { id } );
-
-		if ( user.length ) {
-			return res.json( user[ 0 ] );
-		}
-	} catch ( e ) {
-		console.log( e );
-		return res.status( 500 ).json( 'server error' );
-	}
-
-	return res.status( 404 ).json( 'no such user' );
-} );
-
-app.put( '/image', async ( req, res ) => {
-	const { id } = req.body;
-
-	try {
-		// Destructure object inside array
-		const [ { entries } ] = await db( 'users' )
-			.where( { id } )
-			.increment( 'entries', 1 )
-			.returning( 'entries' );
-
-		if ( entries ) {
-			return res.json( entries );
-		}
-	} catch ( e ) {
-		console.log( e );
-		return res.status( 500 ).json( 'server error' );
-	}
-
-	return res.status( 404 ).json( 'not found' );
-} );
-
-app.get( '/signout', ( req, res ) => {
-	return res.json( 'signout' );
-} );
+app.put(
+	'/image',
+	( req, res ) => image( req, res, db ),
+);
 
 app.listen( 3000, () => {
 	console.log( 'Server running on port 3000' );
 } );
-
-/*
- / -> res = this is working
-
- /signin -> POST = success or fail
-
- /register -> POST = new user
-
- /profile/:userid -> GET = user
-
- /image -> PUT = user
-
- /signout -> GET
- */
