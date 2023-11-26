@@ -13,7 +13,7 @@ const express    = require( 'express' ),
  * @returns {*}
  */
 function getUser( id ) {
-	return database.users.any( user => user.id === Number( id ) );
+	return database.users.find( user => user.id === Number( id ) );
 }
 
 // Setup middleware to parse the body of the request
@@ -41,7 +41,10 @@ app.post( '/signin', ( req, res ) => {
 				return res.status( 400 ).json( 'wrong credentials' );
 			}
 
-			return res.json( user );
+			const return_user = user;
+			delete return_user.pass;
+
+			return res.json( return_user );
 		}
 	}
 
@@ -70,7 +73,10 @@ app.post( '/register', ( req, res ) => {
 		}
 	} );
 
-	res.json( database.users[ database.users.length - 1 ] );
+	const new_user = database.users[ database.users.length - 1 ];
+	delete new_user.pass;
+
+	res.json( new_user );
 } );
 
 app.get( '/profile/:id', ( req, res ) => {
@@ -88,7 +94,7 @@ app.put( '/image', ( req, res ) => {
 	const { id } = req.body;
 	const user   = getUser( id );
 
-	if ( user.length ) {
+	if ( user.id ) {
 		database.users[ +id - 1 ].entries++;
 
 		fs.writeFile( 'db.json', JSON.stringify( database ), ( err ) => {
