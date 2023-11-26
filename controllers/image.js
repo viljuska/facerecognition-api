@@ -29,7 +29,6 @@ const setupClarifaiRequest = ( imageUrl ) => {
       },
       handleApiCall        = ( req, res ) => {
 	      const { input } = req.body;
-	      console.log(input);
 
 	      // todo: add choice to select model
 	      fetch( 'https://api.clarifai.com/v2/models/' + 'face-detection' + '/outputs', setupClarifaiRequest( input ) )
