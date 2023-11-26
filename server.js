@@ -7,7 +7,8 @@ const express                  = require( 'express' ),
       { signin }               = require( './controllers/signin' ),
       { profile }              = require( './controllers/profile' ),
       { image, handleApiCall } = require( './controllers/image' ),
-      PORT                     = process.env.PORT || 3000;
+      PORT                     = process.env.PORT || 3000,
+      environment              = process.env.NODE_ENV || 'development';
 
 // const db = knex( {
 // 	'client'    : 'pg',
@@ -19,13 +20,17 @@ const express                  = require( 'express' ),
 // 	},
 // } );
 
-const db = knex( {
-	'client'    : 'pg',
-	'connection': {
-		'connectionString': 'postgres://facerecognition_user:akElhzA4fk0qkNlV1dCkPpyTboURhEDb@dpg-clhrikt8td7s73bqruhg-a.frankfurt-postgres.render.com/facerecognition_caet', // External url
-		'ssl'             : true,
-	},
-} );
+const connectionString = {
+	      production : 'postgres://facerecognition_user:akElhzA4fk0qkNlV1dCkPpyTboURhEDb@dpg-clhrikt8td7s73bqruhg-a/facerecognition_caet',
+	      development: 'postgres://facerecognition_user:akElhzA4fk0qkNlV1dCkPpyTboURhEDb@dpg-clhrikt8td7s73bqruhg-a.frankfurt-postgres.render.com/facerecognition_caet',// External url
+      },
+      db               = knex( {
+	      'client'    : 'pg',
+	      'connection': {
+		      'connectionString': connectionString[ environment ],
+		      'ssl'             : true,
+	      },
+      } );
 
 
 // Setup middleware to parse the body of the request
@@ -61,8 +66,6 @@ app.put(
 	'/image',
 	( req, res ) => image( req, res, db ),
 );
-
-console.log( process.env );
 
 app.listen( PORT, () => {
 	console.log( `Server running on port ${ PORT }` );
